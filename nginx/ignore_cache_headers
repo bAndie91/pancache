@@ -1,0 +1,1 @@
+proxy_ignore_headers X-Accel-Expires Cache-Control Expires;

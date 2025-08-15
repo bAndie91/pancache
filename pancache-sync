@@ -1,0 +1,20 @@
+#!/bin/bash
+
+set -e
+set -o pipefail
+set -u
+
+pancache_peer_url=$1
+
+cd /pancache/nginx-proxy-cache
+
+export http_proxy=$pancache_peer_url
+export https_proxy=$pancache_peer_url
+
+metalink-sync-list http://pancache-mirror.local/index.meta4 |\
+while read reason url localfile
+do 
+	echo "$reason	$localfile"
+	curl -f --progress-bar "$url" --create-dirs -o "$localfile~" -R && \
+	mv -f "$localfile~" "$localfile"
+done

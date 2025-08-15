@@ -1,0 +1,1 @@
+proxy_ignore_headers Set-Cookie Vary;

@@ -1,0 +1,243 @@
+
+proxy_cache_path /pancache/nginx-proxy-cache levels=2:2:2 keys_zone=pancache:4m inactive=1000y;
+
+# assuming nginx is using MD5 hash hex as cache file names:
+perl_set $pancache_file_rpath 'sub {
+	use Digest::MD5;
+	my $r = shift;
+	my $proxy_cache_key = $r->variable("proxy_cache_key");
+	my $digest = Digest::MD5::md5_hex($proxy_cache_key);
+	sprintf "%s/%s/%s/%s", substr($digest, -2), substr($digest, -4, 2), substr($digest, -6, 2), $digest;
+}';
+
+perl_set $pancache_file_age 'sub {
+	use File::stat;
+	my $r = shift;
+	my $document_root = $r->variable("document_root");
+	my $pancache_file_rpath = $r->variable("pancache_file_rpath");
+	my $apath = "/pancache/nginx-proxy-cache/".$pancache_file_rpath;
+	if(-e $apath)
+	{
+		my $mtime = stat($apath)->mtime;
+		return time - $mtime;
+	}
+	"";
+}';
+
+log_format logfmt_pancache_proxy 'time=$time_iso8601 client.addr=$remote_addr request.xff="$http_x_forwarded_for" '
+	'request.method=$request_method request.url=$proxy_upstream_scheme://$proxy_upstream_host$proxy_upstream_request_uri request.proto=$server_protocol '
+	'cache.status=$upstream_cache_status upstream.addr="$upstream_addr" upstream.status="$upstream_status" upstream.duration="$upstream_response_time" '
+	'response.status=$status response.size=$bytes_sent response.body.size=$body_bytes_sent '
+	'response.location="$sent_http_location"';
+
+server
+{
+	listen 127.0.0.1:1081;
+	
+	server_name pancache.localhost;
+	root /pancache;
+	proxy_temp_path /pancache/temp;
+	proxy_ignore_client_abort on;
+	merge_slashes off;
+	absolute_redirect off;
+	etag off;
+	
+	access_log /pancache/proxy.log logfmt_pancache_proxy;
+	error_log  /pancache/error.log error;
+	
+	set $proxy_upstream_scheme $http_x_forwarded_scheme;
+	set $proxy_upstream_host $host;
+	set $proxy_upstream_request_uri $request_uri;
+	
+	set $response_complete_location_prepend "";
+	set $response_absolute_location_prepend "";
+	set $response_relative_location_prepend "";
+	
+	location /
+	{
+		if ($request_uri ~ ^/(https?)://([^/]+)/?(.*)$)
+		{
+			set $proxy_upstream_scheme $1;
+			set $proxy_upstream_host $2;
+			set $proxy_upstream_request_uri "/$3";
+			set $response_complete_location_prepend "/";
+			set $response_absolute_location_prepend "/$proxy_upstream_scheme://$proxy_upstream_host";
+			set $response_relative_location_prepend "";
+		}
+		
+		proxy_pass $proxy_upstream_scheme://$proxy_upstream_host$proxy_upstream_request_uri;
+		proxy_connect_timeout 8s;
+		proxy_send_timeout 6s;
+		proxy_read_timeout 6s;
+		proxy_next_upstream_timeout 10s;
+		proxy_next_upstream error timeout invalid_header http_429 http_500 http_502 http_503 http_504;
+		
+		include proxy/request;
+		proxy_set_header Accept-Language "";
+		proxy_set_header X-Forwarded-For "";
+		proxy_set_header X-Forwarded-Scheme "";
+		
+		proxy_cache pancache;
+		proxy_cache_methods GET HEAD;
+		set $proxy_cache_key "$request_method $proxy_upstream_scheme://$proxy_upstream_host$proxy_upstream_request_uri";
+		proxy_cache_key "$proxy_cache_key";
+		proxy_no_cache "";
+		proxy_cache_valid 302 303 307 404 15s;
+		proxy_cache_valid 500 30s;
+		proxy_cache_valid 502 503 504 0s;
+		proxy_cache_valid any 1000y;
+		proxy_cache_use_stale error timeout invalid_header updating http_403 http_404 http_429 http_500 http_502 http_503 http_504;
+		proxy_cache_revalidate on;
+		proxy_cache_background_update on;
+		proxy_cache_lock on;
+		proxy_cache_lock_timeout 12s;
+		
+		include proxy/response;
+		include proxy/ignore_xaccel_headers;
+		include proxy/ignore_vary_headers;
+		proxy_pass_header Date;
+		proxy_pass_header Server;
+		
+		# If several directives can be applied to the header fields of a proxied server response, the first matching directive will be chosen.
+		proxy_redirect ~^([^:]+://.+) $response_complete_location_prepend$1;
+		proxy_redirect ~^(/.*) $response_absolute_location_prepend$1;
+		proxy_redirect ~^(.+) $response_relative_location_prepend$1;
+		
+		add_header X-Cache-Status "$upstream_cache_status from $server_name" always;
+		add_header X-Cache-File $pancache_file_rpath always;
+		add_header Age "$pancache_file_age" always;
+		add_header Via "1.0 $hostname (nginx/$nginx_version)" always;
+	}
+}
+
+server
+{
+	listen 127.0.0.1:1081;
+	
+	server_name pancache-mirror.local;
+	root /pancache/nginx-proxy-cache;
+	etag off;
+	
+	access_log /pancache/mirror.access.log ;
+	error_log  /pancache/mirror.error.log error;
+	
+	autoindex on;
+	autoindex_exact_size on;
+	autoindex_format html;
+	
+	gzip on;
+	gzip_types *;
+	gzip_comp_level 6;
+	
+	types
+	{
+		application/metalink+xml metalink;
+		application/metalink4+xml meta4;
+	}
+	
+	location = /
+	{
+		rewrite .* /index.html last;
+	}
+	
+	location ~ ^/index.(meta4|html)$
+	{
+		set $index_type $1;
+		perl 'sub {
+			use HTML::Template;
+			use File::stat;
+			use File::Find;
+			use File::Slurp;
+			use Digest::SHA qw/sha256_hex/;
+			use Fcntl qw/:seek/;
+			use POSIX qw/strftime/;
+			
+			my $r = shift;
+			my $document_root = $r->variable("document_root");
+			my $index_type = $r->variable("index_type");
+			my $statcache_file = "$document_root/statcache";
+			
+			my %statcache;
+			map { my @F = split /\\t/; $statcache{$F[0]} = {mtime=>$F[1], ctime=>$F[2], atime=>$F[3], checksum=>$F[4]}; } read_file($statcache_file, err_mode=>"carp", chomp=>1);
+			
+			my @files;
+			my @dirs;
+			my $findopts = {
+				no_chdir => 1,
+				preprocess => sub {
+					return sort {$a cmp $b} @_;
+				},
+				wanted => sub {
+					my $abs_path = $File::Find::name;
+					my ($rel_path) = $abs_path =~ m{^\\Q$document_root\\E/(.*)$};
+					my ($rel_dir, $basename) = $rel_path =~ m{^(.*?)([^/]+)$};
+					next if $rel_dir eq "";
+					
+					if(-d $abs_path)
+					{
+						my $st = stat($abs_path);
+						push @dirs, {
+							rel_path => $rel_path,
+							mtime_iso8601 => strftime("%FT%TZ", gmtime $st->mtime),
+							mtime_autoindex => strftime("%d-%b-%Y %H:%M", gmtime $st->mtime),
+						};
+					}
+					elsif(-f $abs_path)
+					{
+						my $st = stat($abs_path);
+						if(not exists $statcache{$rel_path} or $statcache{$rel_path}->{mtime} != $st->mtime)
+						{
+							my $digest = Digest::SHA->new(256);
+							$digest->addfile($abs_path);
+							my $checksum = $digest->hexdigest;
+							
+							# keep the rest of the line after the path fixed width so we can overwrite without needing a locking mechanism:
+							my $statentry = sprintf "%10.10s\\t%10.10s\\t%10.10s\\t%64.64s", $st->mtime, $st->ctime, $st->atime, $checksum;
+							if(not exists $statcache{$rel_path})
+							{
+								open my $fh, ">>", $statcache_file;
+								print {$fh} "$rel_path\\t$statentry\\n";
+								close $fh;
+							}
+							else
+							{
+								open my $fh, "+<", $statcache_file;
+								my $prefix_len = length($rel_path) + 1;
+								while(not eof $fh)
+								{
+									my $pos = tell $fh;
+									my $line = <$fh>;
+									if(substr($line, 0, $prefix_len) eq "$rel_path\\t")
+									{
+										seek $fh, $pos+$prefix_len, SEEK_SET;
+										print {$fh} $statentry;
+										last;
+									}
+								}
+								close $fh;
+							}
+							$statcache{$rel_path}->{checksum} = $checksum;
+						}
+						
+						push @files, {
+							rel_path => $rel_path,
+							size => $st->size,
+							mtime_iso8601 => strftime("%FT%TZ", gmtime $st->mtime),
+							mtime_autoindex => strftime("%d-%b-%Y %H:%M", gmtime $st->mtime),
+							hash => $statcache{$rel_path}->{checksum},
+						};
+					}
+				},
+			};
+			find($findopts, $document_root);
+			
+			my $template = HTML::Template->new(filename => "$document_root/$index_type.template", die_on_bad_params=>0, default_escape=>"html");
+			$template->param(files => \\@files);
+			$template->param(dirs => \\@dirs);
+			
+			$r->send_http_header();
+			$r->print( $template->output );
+			return OK;
+		}';
+	}
+}

@@ -1,0 +1,10 @@
+add_header X-Upstream-Status "$upstream_status" always;
+add_header X-Upstream-Address "$upstream_addr" always;
+
+proxy_hide_header Set-Cookie;
+proxy_hide_header Vary;
+proxy_hide_header Content-Security-Policy;
+proxy_hide_header Strict-Transport-Security;
+proxy_hide_header Public-Key-Pins;
+proxy_hide_header Expect-CT;
+proxy_hide_header Upgrade;
