@@ -18,7 +18,8 @@ ENV PATH="/root/.local/bin:${PATH}"
 RUN pipx install uv
 
 WORKDIR /mitmproxy
-COPY mitmproxy/mitmproxy mitmproxy/pyproject.toml mitmproxy/uv.lock strip-proxy.py ./
+COPY mitmproxy/mitmproxy ./mitmproxy
+COPY mitmproxy/pyproject.toml mitmproxy/uv.lock strip-proxy.py ./
 ARG UV_DEFAULT_INDEX=""
 RUN uv sync --frozen
 
