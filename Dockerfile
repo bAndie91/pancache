@@ -1,4 +1,4 @@
-FROM debian:bookworm-slim
+FROM devuan/devuan:ceres-2025-08-16
 
 ARG APT_OPTS=""
 RUN apt-get ${APT_OPTS} update && \
@@ -6,7 +6,7 @@ RUN apt-get ${APT_OPTS} update && \
 		procps iputils-ping netcat-openbsd curl \
 		libnginx-mod-http-perl \
 		python3 python3-pip python3-venv pipx \
-		perl-modules-5.36 libfile-slurp-perl libhtml-template-perl  \
+		perl libfile-slurp-perl libhtml-template-perl libtimedate-perl libipc-run-perl libxml-simple-perl \
 		cron \
 	&& rm -rf /var/lib/apt/lists/*
 
@@ -21,10 +21,12 @@ WORKDIR /mitmproxy
 COPY mitmproxy/mitmproxy ./mitmproxy
 COPY mitmproxy/pyproject.toml mitmproxy/uv.lock strip-proxy.py ./
 ARG UV_DEFAULT_INDEX=""
-RUN uv sync --frozen
+ARG UV_INSECURE_HOST=""
+RUN uv sync -v --frozen
 
 WORKDIR /etc/nginx
-COPY nginx/proxy nginx/sites-enabled ./
+COPY nginx/proxy ./proxy
+COPY nginx/sites-enabled ./sites-enabled
 
 
 VOLUME ["/pancache"]
