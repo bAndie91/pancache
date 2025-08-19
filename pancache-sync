@@ -1,25 +1,10 @@
 #!/bin/bash
 
-set -e
-set -o pipefail
-set -u
-
-pancache_peer_addr=$1
-
-cd /pancache/nginx-proxy-cache
-
-ca_file=`mktemp curl_ca_XXXXX.pem`
-trap 'rm "$ca_file"' ERR EXIT
-curl -sSf -x "http://$pancache_peer_addr" http://mitm.it/cert/pem > "$ca_file"
-
-export CURL_CA_BUNDLE=$ca_file
-export http_proxy=$pancache_peer_addr
-export https_proxy=$pancache_peer_addr
-
-metalink-sync-list http://pancache-mirror.local/index.meta4 |\
-while IFS=$'\t' read -r reason url localfile
-do 
-	echo "$reason	$localfile"
-	curl -f --compressed --progress-bar "$url" --create-dirs -o "$localfile~" -R && \
-	mv -f "$localfile~" "$localfile"
+cat "$@" |\
+grep -vE '^\s*(#|$)' |\
+while read -r peer_addr
+do
+	/pancache-sync-peer "$peer_addr" &
 done
+
+wait

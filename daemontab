@@ -1,3 +1,3 @@
 mitmproxy	cdexec /mitmproxy env STRIP_SSL_PROXY_UPSTREAM_HOST=localhost STRIP_SSL_PROXY_UPSTREAM_PORT=1081 uv run mitmdump -m regular -p 5003 -s strip-proxy.py --set connection_strategy=lazy --set upstream_cert=false
-nginx		nginx -g "daemon off;"
+nginx		/etc/nginx/start.sh -g "daemon off;"
 crond		cron -f

@@ -5,4 +5,7 @@ default:
 
 .PHONY: docker-image
 docker-image:
-	docker build -t pancache --build-arg UV_DEFAULT_INDEX='$(UV_DEFAULT_INDEX)' --build-arg UV_INSECURE_HOST='$(UV_INSECURE_HOST)' --build-arg APT_OPTS='$(APT_OPTS)' .
+	docker build -t pancache \
+		--build-arg PIP_INDEX_URL='$(PIP_INDEX_URL)' --build-arg PIP_TRUSTED_HOST='$(PIP_TRUSTED_HOST)' \
+		--build-arg UV_DEFAULT_INDEX='$(UV_DEFAULT_INDEX)' --build-arg UV_INSECURE_HOST='$(UV_INSECURE_HOST)' \
+		--build-arg APT_OPTS='$(APT_OPTS)' .

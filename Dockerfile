@@ -1,4 +1,6 @@
 FROM devuan/devuan:ceres-2025-08-16
+VOLUME ["/pancache"]
+EXPOSE 5003
 
 ARG APT_OPTS=""
 RUN apt-get ${APT_OPTS} update && \
@@ -15,6 +17,8 @@ COPY hband-tools/admin-tools/dmaster hband-tools/user-tools/metalink-sync-list h
 COPY daemontab /etc/
 
 ENV PATH="/root/.local/bin:${PATH}"
+ARG PIP_INDEX_URL=""
+ARG PIP_TRUSTED_HOST=""
 RUN pipx install uv
 
 WORKDIR /mitmproxy
@@ -25,15 +29,13 @@ ARG UV_INSECURE_HOST=""
 RUN uv sync -v --frozen
 
 WORKDIR /etc/nginx
+COPY nginx/start ./start.sh
 COPY nginx/proxy ./proxy
 COPY nginx/sites-enabled ./sites-enabled
 
-
-VOLUME ["/pancache"]
-EXPOSE 5003
-
 WORKDIR /
-CMD ["dmaster"]
+COPY pancache-sync pancache-sync-peer ./
+COPY peers.txt /pancache/
+COPY crontab /etc/cron.d/pancache-sync
 
-# run sync from cron
-# take peer list from /pancache/peers
+CMD ["dmaster"]

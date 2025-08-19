@@ -1,0 +1,2 @@
+# enter other pancache peer addresses line-by-line, eg:
+# hostname:5003
