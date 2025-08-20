@@ -34,6 +34,7 @@ COPY nginx/proxy ./proxy
 COPY nginx/sites-enabled ./sites-enabled
 
 WORKDIR /
+COPY template.html template.meta4 /pancache/nginx-proxy-cache/
 COPY pancache-sync pancache-sync-peer ./
 COPY peers.txt /pancache/
 COPY crontab /etc/cron.d/pancache-sync

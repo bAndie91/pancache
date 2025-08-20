@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metalink xmlns="urn:ietf:params:xml:ns:metalink">
+<TMPL_LOOP NAME=files>
+		<file name="<TMPL_VAR NAME=rel_path>">
+			<size><TMPL_VAR NAME=size></size>
+			<mtime><TMPL_VAR NAME=mtime_iso8601></mtime>
+			<hash type="sha-256"><TMPL_VAR NAME=hash></hash>
+			<url><TMPL_VAR NAME=rel_path></url>
+		</file>
+</TMPL_LOOP>
+</metalink>

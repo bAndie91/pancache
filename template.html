@@ -1,0 +1,15 @@
+<html>
+<head><title>Index of /</title></head>
+<body>
+<h1>Index of /</h1><hr>
+<pre>
+	<TMPL_LOOP NAME=files>
+	<a href="<TMPL_VAR NAME=rel_path>" content-checksum="<TMPL_VAR NAME=hash>"><TMPL_VAR NAME=rel_path></a>  <TMPL_VAR NAME=mtime_autoindex>  <TMPL_VAR NAME=size>
+	</TMPL_LOOP>
+<!--
+	<TMPL_LOOP NAME=dirs>
+	<a href="<TMPL_VAR NAME=rel_path>"><TMPL_VAR NAME=rel_path></a>  <TMPL_VAR NAME=mtime_autoindex>  -
+	</TMPL_LOOP>
+-->
+</pre><hr></body>
+</html>

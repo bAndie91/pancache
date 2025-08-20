@@ -30,6 +30,7 @@ This is done by storing all http responses (successful and errors too) in cache 
   - mirror mode
     - the user addresses `http://pancache-mirror.local` via explicite proxy mode
     - the cache store can be downloaded, sync'ed to an other pancache instance (or anywhere for that matter)
+    - see `http://pancache-mirror.local/index.meta4` for Metalink4-compatible file list
 - automatically sync to other preset pancache instances
   - put `hostname:port` addresses line-by-line in `pancache/peers.txt` file (in the docker volume)
   - it periodically downloads newer cache items from these peers
