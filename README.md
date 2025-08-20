@@ -41,9 +41,14 @@ This is done by storing all http responses (successful and errors too) in cache 
 - source
   - http://git.uucp.hu/sysop/pancache
   - https://codeberg.org/hband/pancache.git
-- available on Docker Hub (`docker pull hband/pancache`)
-  - https://hub.docker.com/r/hband/pancache
-  - https://cr.bitinfo.hu/pancache (TBD)
+- available on some Container Registries:
+  - Docker Hub
+    - https://hub.docker.com/r/hband/pancache
+    - `docker pull hband/pancache`
+  - GitLab
+    - https://gitlab.com/hband-default/pancache/container_registry
+    - `docker pull registry.gitlab.com/hband-default/pancache`
+  - `docker pull cr.bitinfo.hu/hband/pancache` (TBD)
 
 ## Install
 
