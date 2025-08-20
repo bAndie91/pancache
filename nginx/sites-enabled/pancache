@@ -25,7 +25,7 @@ perl_set $pancache_file_age 'sub {
 }';
 
 log_format logfmt_pancache_proxy 'time=$time_iso8601 client.addr=$remote_addr request.xff="$http_x_forwarded_for" '
-	'request.method=$request_method request.url=$proxy_upstream_scheme://$proxy_upstream_host$proxy_upstream_request_uri request.proto=$server_protocol '
+	'request.method=$request_method request.url=$proxy_upstream_scheme://$proxy_upstream_host$proxy_upstream_request_uri request.proto=$server_protocol request.size=$request_length '
 	'cache.status=$upstream_cache_status upstream.addr="$upstream_addr" upstream.status="$upstream_status" upstream.duration="$upstream_response_time" '
 	'response.status=$status response.size=$bytes_sent response.body.size=$body_bytes_sent '
 	'response.location="$sent_http_location"';
