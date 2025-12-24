@@ -27,10 +27,16 @@ This is done by storing all http responses (successful and errors too) in cache 
       - works in http and https transport layers too
       - `https://example.net/example-page.html` verbatim in the place of the URL path is the internet resource's URL you want to access (and put in cache)
       - the internet resource's URL can be either http or https too
+    - does NOT transform on-page URLs (anchor href, image sources, script sources, links, other references, etc)
+      so absolute links will be BROKEN on sites visited this way.
+      More useful for programmatic access rather than browser-interactive usage.
   - mirror mode
-    - the user addresses `http://pancache-mirror.local` via explicite proxy mode
+    - the user addresses pancache in explicite proxy mode, by the dedicated `pancache-mirror.local` domain name or by a private IP as http domain name, i.e.
+      - `http://pancache-mirror.local:5003`
+      - `http://127.0.0.1:5003` (any from the loopback range)
+      - `http://192.168.x.y:5003` (any of RFC 1918 ranges: 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16)
     - the cache store can be downloaded, sync'ed to an other pancache instance (or anywhere for that matter)
-    - see `http://pancache-mirror.local/index.meta4` for Metalink4-compatible file list
+    - see `http://pancache-mirror.local:5003/index.meta4` for Metalink4-compatible file list
 - automatically sync to other preset pancache instances
   - put `hostname:port` addresses line-by-line in `pancache/peers.txt` file (in the docker volume)
   - it periodically downloads newer cache items from these peers

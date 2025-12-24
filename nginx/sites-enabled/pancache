@@ -32,9 +32,9 @@ log_format logfmt_pancache_proxy 'time=$time_iso8601 client.addr=$remote_addr re
 
 server
 {
-	listen 127.0.0.1:1081;
-	
+	listen 127.0.0.1:1081 default_server;
 	server_name pancache.localhost;
+	
 	root /pancache;
 	proxy_temp_path /pancache/temp;
 	proxy_ignore_client_abort on;
@@ -115,6 +115,11 @@ server
 	listen 127.0.0.1:1081;
 	
 	server_name pancache-mirror.local;
+	server_name ~^10\.;
+	server_name ~^127\.;
+	server_name ~^172\.(1[6-9]|2[0-9]|3[01])\.;
+	server_name ~^192\.168\.;
+	
 	root /pancache/nginx-proxy-cache;
 	etag off;
 	
