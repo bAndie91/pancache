@@ -1,7 +1,9 @@
-FROM devuan/devuan:ceres-2025-08-16
+FROM registry-1.docker.io/devuan/devuan@sha256:17bbe993d6806f959202c4cb41e88ce6e86aedca06dd229f48db08cc23cc24cb
 VOLUME ["/pancache"]
 EXPOSE 5003
 
+ARG http_proxy=""
+ARG https_proxy=""
 ARG APT_OPTS=""
 RUN apt-get ${APT_OPTS} update && \
 	apt-get ${APT_OPTS} install -y --no-install-recommends \

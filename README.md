@@ -42,6 +42,23 @@ This is done by storing all http responses (successful and errors too) in cache 
   - it periodically downloads newer cache items from these peers
   - so you can organize a pancache cluster for yourself
 
+## Build
+
+- `make image`
+  - to build the container image using the default build backend, which is `buildah`.
+  - `make docker-image` to make the image using Docker
+- upload to container registries
+  - `make push OCI_REGISTRY_REPO=gitlab.com/hband-default`
+  - `make push OCI_REGISTRY_REPO=registry-1.docker.io/hband`
+- `make` variables:
+  - `TAG` – override container image tag. Default is the current git commit (short) hash. You can change tags on the image after the build.
+  - `DOCKER_PULL_http_proxy` and `DOCKER_PULL_https_proxy` – proxy addresses to pull base images (both for Docker and Buildah)
+  - variables affecting the **build** process:
+    - `DOCKER_BUILD_http_proxy`, and `DOCKER_BUILD_https_proxy` - general proxy address during the build sequence, usually empty
+    - `APT_OPTS` – custom options for `apt-get` (eg. `-oAcquire::http::Proxy=http://acng.local:9999/`)
+    - `PIP_INDEX_URL` and `PIP_TRUSTED_HOST` – custom index url for `pip` during the build, useful to fetch packages from your local PYPI cache
+    - `UV_DEFAULT_INDEX` and `UV_INSECURE_HOST` – custom index url for `uv` during the build, useful to fetch packages from your local cache
+
 ## Download
 
 - source
