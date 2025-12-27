@@ -239,7 +239,7 @@ server
 				};
 				find($findopts, $document_root);
 				
-				my $template = HTML::Template->new(filename => "$document_root/template.$index_type", die_on_bad_params=>0, default_escape=>"html");
+				my $template = HTML::Template->new(filename => "/filelist-template.$index_type", die_on_bad_params=>0, default_escape=>"html");
 				$template->param(files => \\@files);
 				$template->param(dirs => \\@dirs);
 				

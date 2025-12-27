@@ -31,14 +31,14 @@ ARG UV_INSECURE_HOST=""
 RUN uv sync -v --frozen
 
 WORKDIR /etc/nginx
-COPY nginx/start ./start.sh
+COPY nginx/start.sh ./start.sh
 COPY nginx/proxy ./proxy
 COPY nginx/sites-enabled ./sites-enabled
 
 WORKDIR /
-COPY template.html template.meta4 /pancache/nginx-proxy-cache/
+COPY filelist-template.html filelist-template.meta4 ./
 COPY pancache-sync pancache-sync-peer ./
-COPY peers.txt /pancache/
+COPY peers.txt ./sample-peers.txt
 COPY crontab /etc/cron.d/pancache-sync
 
 CMD ["dmaster"]

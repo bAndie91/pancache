@@ -1,5 +1,10 @@
 #!/bin/bash
 
+if [ ! -e "$1" ]
+then
+	cat /sample-peers.txt > "$1"
+fi
+
 cat "$@" |\
 grep -vE '^\s*(#|$)' |\
 while read -r peer_addr
