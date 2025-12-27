@@ -83,8 +83,9 @@ This is done by storing all http responses (successful and errors too) in cache 
 ## Usage
 
 - install the mitmproxy CA cert:
-  - `curl -f -x http://localhost:5003 http://mitm.it/cert/pem > /etc/ssl/certs/pancache-mitmproxy.pem`
-  - `update-ca-certificates`
+  1. `curl -f -x http://localhost:5003 http://mitm.it/cert/pem > /etc/ssl/certs/pancache-mitmproxy.pem`
+  1. `update-ca-certificates`
+  1. `c_rehash`
 - setup proxy:
   - `http_proxy=http://localhost:5003`
   - `https_proxy=http://localhost:5003`
