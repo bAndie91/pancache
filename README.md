@@ -71,7 +71,7 @@ This is done by storing all http responses (successful and errors too) in cache 
   - GitLab
     - https://gitlab.com/hband-default/pancache/container_registry
     - `docker pull registry.gitlab.com/hband-default/pancache`
-  - `docker pull cr.bitinfo.hu/hband/pancache` (TBD)
+  - `docker pull cr.bitinfo.hu/hband/pancache`
 
 ## Install
 
