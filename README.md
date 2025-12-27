@@ -42,8 +42,24 @@ This is done by storing all http responses (successful and errors too) in cache 
   - it periodically downloads newer cache items from these peers
   - so you can organize a pancache cluster for yourself
 
+## Download
+
+- source
+  - http://git.uucp.hu/sysop/pancache
+  - https://codeberg.org/hband/pancache.git
+- pre-built container image is available on some Container Registries:
+  - Docker Hub
+    - https://hub.docker.com/r/hband/pancache
+    - `docker pull hband/pancache`
+  - GitLab
+    - https://gitlab.com/hband-default/pancache/container_registry
+    - `docker pull registry.gitlab.com/hband-default/pancache`
+  - `docker pull cr.bitinfo.hu/hband/pancache`
+
 ## Build
 
+- `git clone ...`
+- `git submodule update`
 - `make image`
   - to build the container image using the default build backend, which is `buildah`.
   - `make docker-image` to make the image using Docker
@@ -58,20 +74,6 @@ This is done by storing all http responses (successful and errors too) in cache 
     - `APT_OPTS` – custom options for `apt-get` (eg. `-oAcquire::http::Proxy=http://acng.local:9999/`)
     - `PIP_INDEX_URL` and `PIP_TRUSTED_HOST` – custom index url for `pip` during the build, useful to fetch packages from your local PYPI cache
     - `UV_DEFAULT_INDEX` and `UV_INSECURE_HOST` – custom index url for `uv` during the build, useful to fetch packages from your local cache
-
-## Download
-
-- source
-  - http://git.uucp.hu/sysop/pancache
-  - https://codeberg.org/hband/pancache.git
-- available on some Container Registries:
-  - Docker Hub
-    - https://hub.docker.com/r/hband/pancache
-    - `docker pull hband/pancache`
-  - GitLab
-    - https://gitlab.com/hband-default/pancache/container_registry
-    - `docker pull registry.gitlab.com/hband-default/pancache`
-  - `docker pull cr.bitinfo.hu/hband/pancache`
 
 ## Install
 
