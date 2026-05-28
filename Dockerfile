@@ -15,7 +15,7 @@ RUN apt-get ${APT_OPTS} update && \
 	&& rm -rf /var/lib/apt/lists/*
 
 WORKDIR /usr/bin
-COPY hband-tools/admin-tools/dmaster hband-tools/user-tools/metalink-sync-list hband-tools/user-tools/cdexec ./
+COPY hband-tools/dmaster/dmaster hband-tools/user-tools/metalink-sync-list hband-tools/user-tools/cdexec ./
 COPY daemontab /etc/
 
 ENV PATH="/root/.local/bin:${PATH}"
