@@ -1,4 +1,11 @@
 
+DOCKER_PULL_http_proxy = $(http_proxy)
+DOCKER_PULL_https_proxy = $(https_proxy)
+DOCKER_BUILD_http_proxy = $(http_proxy)
+DOCKER_BUILD_https_proxy = $(https_proxy)
+BUILDAH_PUSH_https_proxy = $(https_proxy)
+
+
 .PHONY: default
 default:
 	false
@@ -42,4 +49,4 @@ push: buildah-image
 ifndef OCI_REGISTRY_REPO
 	$(error Must set OCI_REGISTRY_REPO)
 endif
-	buildah push pancache:$(TAG) docker://$(OCI_REGISTRY_REPO)/pancache:$(TAG)
+	https_proxy='$(BUILDAH_PUSH_https_proxy)' buildah push pancache:$(TAG) docker://$(OCI_REGISTRY_REPO)/pancache:$(TAG)

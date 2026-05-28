@@ -69,6 +69,7 @@ This is done by storing all http responses (successful and errors too) in cache 
 - `make` variables:
   - `TAG` – override container image tag. Default is the current git commit (short) hash. You can change tags on the image after the build.
   - `DOCKER_PULL_http_proxy` and `DOCKER_PULL_https_proxy` – proxy addresses to pull base images (both for Docker and Buildah)
+  - `BUILDAH_PUSH_https_proxy`
   - variables affecting the **build** process:
     - `DOCKER_BUILD_http_proxy`, and `DOCKER_BUILD_https_proxy` - general proxy address during the build sequence, usually empty
     - `APT_OPTS` – custom options for `apt-get` (eg. `-oAcquire::http::Proxy=http://acng.local:9999/`)
