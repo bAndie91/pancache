@@ -23,7 +23,8 @@ docker-image:
 		--build-arg UV_DEFAULT_INDEX='$(UV_DEFAULT_INDEX)' --build-arg UV_INSECURE_HOST='$(UV_INSECURE_HOST)' \
 		--build-arg APT_OPTS='$(APT_OPTS)' .
 
-TAG = $(shell git show -s --format=%h)
+GIT_COMMIT = $(shell git show -s --format=%h)
+TAG = cmt-$(GIT_COMMIT)
 
 .PHONY: buildah-image
 buildah-image:
