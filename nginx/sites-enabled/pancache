@@ -24,8 +24,15 @@ perl_set $pancache_file_age 'sub {
 	"";
 }';
 
+map "Cache-Control:$http_cache_control X-Upstream-Skip:$http_x_upstream_skip" $pancache_cache_only
+{
+	default no;
+	~(Cache-Control:.*cache-only|X-Upstream-Skip:\\*) yes;
+}
+
 log_format logfmt_pancache_proxy 'time=$time_iso8601 client.addr=$remote_addr request.xff="$http_x_forwarded_for" '
-	'request.method=$request_method request.url=$proxy_upstream_scheme://$proxy_upstream_host$proxy_upstream_request_uri request.proto=$server_protocol request.size=$request_length '
+	'request.method=$request_method request.url=$reconstructed_request_url request.proto=$server_protocol request.size=$request_length '
+	'request.cache_only=$pancache_cache_only '
 	'cache.status=$upstream_cache_status upstream.addr="$upstream_addr" upstream.status="$upstream_status" upstream.duration="$upstream_response_time" '
 	'response.status=$status response.size=$bytes_sent response.body.size=$body_bytes_sent '
 	'response.location="$sent_http_location"';
@@ -48,6 +55,7 @@ server
 	set $proxy_upstream_scheme $http_x_forwarded_scheme;
 	set $proxy_upstream_host $host;
 	set $proxy_upstream_request_uri $request_uri;
+	set $reconstructed_request_url $proxy_upstream_scheme://$proxy_upstream_host$proxy_upstream_request_uri;
 	
 	set $response_complete_location_prepend "";
 	set $response_absolute_location_prepend "";
@@ -60,9 +68,18 @@ server
 			set $proxy_upstream_scheme $1;
 			set $proxy_upstream_host $2;
 			set $proxy_upstream_request_uri "/$3";
+			set $reconstructed_request_url $proxy_upstream_scheme://$proxy_upstream_host$proxy_upstream_request_uri;
+			
 			set $response_complete_location_prepend "/";
 			set $response_absolute_location_prepend "/$proxy_upstream_scheme://$proxy_upstream_host";
 			set $response_relative_location_prepend "";
+		}
+
+		if ($pancache_cache_only = yes)
+		{
+			set $proxy_upstream_scheme "http";
+			set $proxy_upstream_host "127.0.0.1:1082";
+			set $proxy_upstream_request_uri "/";
 		}
 		
 		proxy_pass $proxy_upstream_scheme://$proxy_upstream_host$proxy_upstream_request_uri;
@@ -79,9 +96,9 @@ server
 		
 		proxy_cache pancache;
 		proxy_cache_methods GET HEAD;
-		set $proxy_cache_key "$request_method $proxy_upstream_scheme://$proxy_upstream_host$proxy_upstream_request_uri";
+		set $proxy_cache_key "$request_method $reconstructed_request_url";
 		proxy_cache_key "$proxy_cache_key";
-		proxy_no_cache "";
+		proxy_no_cache $pancache_cache_only;  # only store in cache if it was not a cache-only request
 		proxy_cache_valid 302 303 307 404 15s;
 		proxy_cache_valid 500 30s;
 		proxy_cache_valid 502 503 504 0s;
@@ -108,6 +125,13 @@ server
 		add_header Age "$pancache_file_age" always;
 		add_header Via "1.0 $hostname (nginx/$nginx_version)" always;
 	}
+}
+
+server
+{
+	listen 127.0.0.1:1082;
+	server_name pancache.local;
+	return 412;
 }
 
 server

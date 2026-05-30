@@ -6,37 +6,53 @@ This is done by storing all http responses (successful and errors too) in cache 
 
 ## Features
 
+### Access modes
+
+There are 3 access modes:
+
+- absolute-form / opaque / explicite proxy mode
+  - the user sets up the proxy service address for his user-agent
+- application-level / "web-proxy" mode
+  - accessing pancache as an orinary http service, no as a proxy
+  - URLs look like `http://pancache.local:5003/https://example.net/example-page.html`, where
+    - `pancache.local:5003` is your local pancache instance
+    - works in http and https transport layers too
+    - `https://example.net/example-page.html` verbatim in the place of the URL path is the internet resource's URL you want to access (and put in cache)
+    - the internet resource's URL can be either http or https too
+  - does NOT transform on-page URLs (anchor href, image sources, script sources, links, other references, etc)
+    so absolute links will be BROKEN on sites visited this way.
+    More useful for programmatic access rather than browser-interactive usage.
+- mirror mode / swarm-mirror mode
+  - allows other pancache instances to share cache among themselves
+  - the client addresses pancache in explicite proxy mode, by the dedicated `pancache-mirror.local` domain name or by a private IP as http domain name, i.e.
+    - `http://pancache-mirror.local:5003`
+    - `http://127.0.0.1:5003` (any from the loopback range)
+    - `http://192.168.x.y:5003` (any of RFC 1918 ranges: 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16)
+  - the cache store can be downloaded, sync'ed to an other pancache instance (or anywhere for that matter)
+  - see `http://pancache-mirror.local:5003/index.meta4` for Metalink4-compatible file list
+
+### Request options
+
+Client may set these request headers to change caching behavior:
+
+- to serve only from cache, never fetch from upstream:
+  - `Cache-Control: cache-only` or
+  - `X-Upstream-Skip: *`
+  - if the resource not in cache, return status `412 Precondition Failed`.
+
+### other features
+
 - based on nginx
-- set response headers for debugging
+- sets response headers for debugging
   - `X-Cache-Status`: MISS, HIT, STALE, ...
-  - `X-Cache-File`: filename under the cache storage directory
+  - `X-Cache-File`: nginx cache file's path under the cache storage directory
   - `Age`: seconds since the resource acquired
   - `Via`: `1.0`, hostname, and nginx version
-- preserve the upstream's `Server` and `Date` headers among others
+- preserves the upstream's `Server` and `Date` headers among others
 - HTTPS proxy by **mitmproxy**
   - mitmproxy sets these helper headers:
     - `X-Forwarded-For`
     - `X-Forwarded-Scheme`
-- works in 3 access modes:
-  - absolute-form / opaque / explicite proxy mode
-    - the user sets up the proxy service address for his user-agent
-  - application-level / "web-proxy" mode
-    - accessing pancache as an orinary http service, no as a proxy
-    - URLs look like `http://pancache.local:5003/https://example.net/example-page.html`, where
-      - `pancache.local:5003` is your local pancache instance
-      - works in http and https transport layers too
-      - `https://example.net/example-page.html` verbatim in the place of the URL path is the internet resource's URL you want to access (and put in cache)
-      - the internet resource's URL can be either http or https too
-    - does NOT transform on-page URLs (anchor href, image sources, script sources, links, other references, etc)
-      so absolute links will be BROKEN on sites visited this way.
-      More useful for programmatic access rather than browser-interactive usage.
-  - mirror mode
-    - the user addresses pancache in explicite proxy mode, by the dedicated `pancache-mirror.local` domain name or by a private IP as http domain name, i.e.
-      - `http://pancache-mirror.local:5003`
-      - `http://127.0.0.1:5003` (any from the loopback range)
-      - `http://192.168.x.y:5003` (any of RFC 1918 ranges: 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16)
-    - the cache store can be downloaded, sync'ed to an other pancache instance (or anywhere for that matter)
-    - see `http://pancache-mirror.local:5003/index.meta4` for Metalink4-compatible file list
 - automatically sync to other preset pancache instances
   - put `hostname:port` addresses line-by-line in `pancache/peers.txt` file (in the docker volume)
   - it periodically downloads newer cache items from these peers
@@ -67,7 +83,7 @@ This is done by storing all http responses (successful and errors too) in cache 
   - `make push OCI_REGISTRY_REPO=gitlab.com/hband-default`
   - `make push OCI_REGISTRY_REPO=registry-1.docker.io/hband`
 - `make` variables:
-  - `TAG` – override container image tag. Default is the current git commit (short) hash. You can change tags on the image after the build.
+  - `TAG` – override container image tag. Default is `cmt-` + the current git commit (short) hash. You can change tags on the image after the build.
   - `DOCKER_PULL_http_proxy` and `DOCKER_PULL_https_proxy` – proxy addresses to pull base images (both for Docker and Buildah)
   - `BUILDAH_PUSH_https_proxy`
   - variables affecting the **build** process:
@@ -79,7 +95,7 @@ This is done by storing all http responses (successful and errors too) in cache 
 ## Install
 
 - run as a docker container
-  - `docker run -d --name pancache -p 5003:5003 -v /mnt/drive/pancahce:/pancache hband/pancache`
+  - `docker run -d --name pancache -p 5003:5003 -v /mnt/drive/pancache:/pancache hband/pancache`
 - install on a host system
   - TBD
 
@@ -89,9 +105,28 @@ This is done by storing all http responses (successful and errors too) in cache 
   1. `curl -f -x http://localhost:5003 http://mitm.it/cert/pem > /etc/ssl/certs/pancache-mitmproxy.pem`
   1. `update-ca-certificates`
   1. `c_rehash`
-- setup proxy:
+- set environment to use proxy in programms supporting it:
   - `http_proxy=http://localhost:5003`
   - `https_proxy=http://localhost:5003`
+
+## Maintenance
+
+- generate space usage statistics by domain
+  - see `cache-size` script
+  - run like `find <PATH-TO-PANCACHE-VOLUME-ON-HOST>/nginx-proxy-cache -type f | ./cache-size`
+
+
+### Log format
+
+Log in `/pancache/proxy.log`.
+Example:
+
+```
+time=2026-05-30T14:20:28+00:00 client.addr=127.0.0.1 request.xff="192.168.0.123" 
+request.method=GET request.url=https://www.example.net/news/index.htm request.proto=HTTP/1.1 request.size=236 request.cache_only=no 
+cache.status=MISS upstream.addr="198.51.100.123:443" upstream.status="200" upstream.duration="0.194" response.status=200 
+response.size=7451 response.body.size=5443 response.location="-"
+```
 
 ## TODO
 

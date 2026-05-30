@@ -1,0 +1,47 @@
+#!/usr/bin/env perl
+
+use Data::Dumper;
+use File::stat;
+use Number::Bytes::Human qw/format_bytes/;
+
+$SIG{INT} = sub {
+	print "\n";
+	$SIG{INT} = 'DEFAULT';
+	exit 130;
+};
+
+sub sprint_domain_size
+{
+	my $dom = shift;
+	sprintf "%10s	%s", format_bytes($domainsize{$dom}), $dom;
+}
+
+%domainsize = ();
+
+while(my $cachefilepath = <STDIN>)
+{
+	chomp $cachefilepath;
+	open my $fh, '<', $cachefilepath or warn "$0: $cachefilepath: $!\n";
+	while(<$fh>)
+	{
+		if(/^KEY: \S+ (\S+)/)
+		{
+			my $url = $1;
+			$url =~ m{^[^:]+://([^/]+)};
+			my $domain = $1;
+			print STDERR "\r\x1B[K" . $cachefilepath . "\t" . $domain;
+			$domainsize{$domain} += stat($cachefilepath)->size;
+			last;
+		}
+	}
+	close $fh;
+}
+
+END
+{
+	print "---\n";
+	for(sort {$domainsize{$a} <=> $domainsize{$b}} keys %domainsize)
+	{
+		print sprint_domain_size($_) . "\n";
+	}
+}
