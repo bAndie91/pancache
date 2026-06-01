@@ -83,7 +83,7 @@ Client may set these request headers to change caching behavior:
   - `make push OCI_REGISTRY_REPO=registry.gitlab.com/hband-default`
   - `make push OCI_REGISTRY_REPO=registry-1.docker.io/hband`
 - `make` variables:
-  - `TAG` – override container image tag. Default is `cmt-` + the current git commit (short) hash. You can change tags on the image after the build.
+  - `TAG` – override container image tag. Default is `g` + the current git commit (short) hash. You can change tags on the image after the build.
   - `DOCKER_PULL_http_proxy` and `DOCKER_PULL_https_proxy` – proxy addresses to pull base images (both for Docker and Buildah)
   - `BUILDAH_PUSH_https_proxy`
   - variables affecting the **build** process:

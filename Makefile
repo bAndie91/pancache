@@ -24,7 +24,7 @@ docker-image:
 		--build-arg APT_OPTS='$(APT_OPTS)' .
 
 GIT_COMMIT = $(shell git show -s --format=%h)
-TAG = cmt-$(GIT_COMMIT)
+TAG = g$(GIT_COMMIT)
 
 .PHONY: buildah-image
 buildah-image:
