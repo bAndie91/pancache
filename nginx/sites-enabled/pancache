@@ -26,8 +26,8 @@ perl_set $pancache_file_age 'sub {
 
 map "Cache-Control:$http_cache_control X-Upstream-Skip:$http_x_upstream_skip" $pancache_cache_only
 {
-	default no;
-	~(Cache-Control:.*cache-only|X-Upstream-Skip:\\*) yes;
+	default  0;
+	~(Cache-Control:.*cache-only|X-Upstream-Skip:\\*)  1;
 }
 
 log_format logfmt_pancache_proxy 'time=$time_iso8601 client.addr=$remote_addr request.xff="$http_x_forwarded_for" '
@@ -75,7 +75,7 @@ server
 			set $response_relative_location_prepend "";
 		}
 
-		if ($pancache_cache_only = yes)
+		if ($pancache_cache_only = 1)
 		{
 			set $proxy_upstream_scheme "http";
 			set $proxy_upstream_host "127.0.0.1:1082";
