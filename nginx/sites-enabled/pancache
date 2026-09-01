@@ -30,7 +30,7 @@ map "Cache-Control:$http_cache_control X-Upstream-Skip:$http_x_upstream_skip" $p
 	~(Cache-Control:.*cache-only|X-Upstream-Skip:\\*)  1;
 }
 
-log_format logfmt_pancache_proxy 'time=$time_iso8601 client.addr=$remote_addr request.xff="$http_x_forwarded_for" '
+log_format logfmt_pancache_proxy 'time=$time_iso8601 client.addr=$remote_addr request.xff="$http_x_forwarded_for" $http_x_proxy_client_connection_details'
 	'request.method=$request_method request.url=$reconstructed_request_url request.proto=$server_protocol request.size=$request_length '
 	'request.cache_only=$pancache_cache_only '
 	'cache.status=$upstream_cache_status upstream.addr="$upstream_addr" upstream.status="$upstream_status" upstream.duration="$upstream_response_time" '
