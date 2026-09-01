@@ -10,6 +10,7 @@ RUN apt-get ${APT_OPTS} update && \
 		procps iputils-ping netcat-openbsd curl \
 		libnginx-mod-http-perl \
 		python3 python3-pip python3-venv pipx \
+		gcc libpython3-dev libffi-dev \
 		perl libfile-slurp-perl libhtml-template-perl libtimedate-perl libipc-run-perl libxml-simple-perl \
 		cron \
 	&& rm -rf /var/lib/apt/lists/*
