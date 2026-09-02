@@ -5,6 +5,9 @@ DOCKER_BUILD_http_proxy = $(http_proxy)
 DOCKER_BUILD_https_proxy = $(https_proxy)
 BUILDAH_PUSH_https_proxy = $(https_proxy)
 
+GIT_URL_MITMPROXY = git://git.bitinfo.hu/sysop/mitmproxy
+GIT_REF_MITMPROXY = fbf5de5a8d13f58a1050f9291aa775aeb44594f4
+
 
 .PHONY: default
 default:
@@ -21,6 +24,7 @@ docker-image:
 		--build-arg http_proxy='$(DOCKER_BUILD_http_proxy)' --build-arg https_proxy='$(DOCKER_BUILD_https_proxy)' \
 		--build-arg PIP_INDEX_URL='$(PIP_INDEX_URL)' --build-arg PIP_TRUSTED_HOST='$(PIP_TRUSTED_HOST)' \
 		--build-arg UV_DEFAULT_INDEX='$(UV_DEFAULT_INDEX)' --build-arg UV_INSECURE_HOST='$(UV_INSECURE_HOST)' \
+		--build-arg GIT_URL_MITMPROXY='$(GIT_URL_MITMPROXY)' --build-arg GIT_REF_MITMPROXY='$(GIT_REF_MITMPROXY)' \
 		--build-arg APT_OPTS='$(APT_OPTS)' .
 
 GIT_COMMIT = $(shell git show -s --format=%h)
@@ -36,6 +40,7 @@ buildah-image:
 		--build-arg http_proxy='$(DOCKER_BUILD_http_proxy)' --build-arg https_proxy='$(DOCKER_BUILD_https_proxy)' \
 		--build-arg PIP_INDEX_URL='$(PIP_INDEX_URL)' --build-arg PIP_TRUSTED_HOST='$(PIP_TRUSTED_HOST)' \
 		--build-arg UV_DEFAULT_INDEX='$(UV_DEFAULT_INDEX)' --build-arg UV_INSECURE_HOST='$(UV_INSECURE_HOST)' \
+		--build-arg GIT_URL_MITMPROXY='$(GIT_URL_MITMPROXY)' --build-arg GIT_REF_MITMPROXY='$(GIT_REF_MITMPROXY)' \
 		--build-arg APT_OPTS='$(APT_OPTS)' . ; \
 	fi
 

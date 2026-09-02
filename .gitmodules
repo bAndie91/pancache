@@ -1,6 +1,3 @@
-[submodule "mitmproxy"]
-	path = mitmproxy
-	url = https://github.com/mitmproxy/mitmproxy
 [submodule "hband-tools"]
 	path = hband-tools
 	url = https://codeberg.org/hband/hband-tools.git

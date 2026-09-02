@@ -24,12 +24,14 @@ ARG PIP_INDEX_URL=""
 ARG PIP_TRUSTED_HOST=""
 RUN pipx install uv
 
-WORKDIR /mitmproxy
-COPY mitmproxy/mitmproxy ./mitmproxy
-COPY mitmproxy/pyproject.toml mitmproxy/uv.lock strip-proxy.py ./
+WORKDIR /
+COPY build-mitmproxy.sh .
+ARG GIT_URL_MITMPROXY
+ARG GIT_REF_MITMPROXY
 ARG UV_DEFAULT_INDEX=""
 ARG UV_INSECURE_HOST=""
-RUN uv sync -v --frozen
+RUN ./build-mitmproxy.sh /mitmproxy
+COPY strip-proxy.py /mitmproxy
 
 WORKDIR /etc/nginx
 COPY nginx/start.sh ./start.sh
