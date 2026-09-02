@@ -1,10 +1,22 @@
-from mitmproxy import http, tls
-from dataclasses import dataclass, asdict
-import sys
+
 import os
-import signal
 import re
 import json
+from dataclasses import dataclass, asdict
+from mitmproxy import http, tls
+
+
+def kvpairs(d, pfx=''):
+	if isinstance(d, dict):
+		for k, v in d.items():
+			subpfx = k if pfx == '' else pfx + '.' + k
+			yield from kvpairs(v, subpfx)
+	else:
+		if d is None:
+			d = ''
+		elif d == '' or re.search(r"[' ]", d):
+			d = "'" + re.sub("'", "''", d) + "'"
+		yield f"{pfx}={d}"
 
 
 @dataclass
@@ -21,7 +33,7 @@ def tls_established_client(data: tls.TlsData) -> None:
 			sni = data.context.client.sni,
 			version = data.context.client.tls_version,
 			cipher = data.context.client.cipher,
-			alpn = data.context.client.alpn_proto_negotiated,
+			alpn = data.context.client.alpn_proto_negotiated.decode(),
 		)
 		if getattr(data.context.client, "_http_connect_seen", False):
 			# handshake happened after a CONNECT -> tunnel TLS
@@ -73,7 +85,7 @@ def requestheaders(flow: http.HTTPFlow) -> None:
 		flow.request.headers["X-Forwarded-Scheme"] = target_scheme
 		
 		# attach diagnostic info
-		flow.request.headers["X-Proxy-Client-Connection-Details"] = json.dumps({
+		flow.request.headers["X-Proxy-Client-Connection-Details"] = ' '.join(kvpairs({
 			"tls": {
 				"outer": asdict(getattr(flow.client_conn, "outer_tls", TlsSummary())),
 				"inner": asdict(getattr(flow.client_conn, "inner_tls", TlsSummary())),
@@ -86,7 +98,7 @@ def requestheaders(flow: http.HTTPFlow) -> None:
 				"target_origin": request_target_origin,
 				"host_header": flow.request.host_header,
 			},
-		})
+		}))
 	except:
 		flow.kill()
 		raise
