@@ -49,6 +49,7 @@ def tls_established_client(data: tls.TlsData) -> None:
 def http_connect(flow: http.HTTPFlow) -> None:
 	try:
 		flow.client_conn._http_connect_seen = True
+		flow.client_conn.http_connect_http_version = flow.request.http_version
 		flow.client_conn.http_connect_authority = flow.request.authority
 		flow.client_conn.http_connect_host_header = flow.request.host_header
 	except:
@@ -59,13 +60,34 @@ def http_connect(flow: http.HTTPFlow) -> None:
 def requestheaders(flow: http.HTTPFlow) -> None:
 	try:
 		# extract conection data for diagnostics
-		http_connect_authority = getattr(flow.client_conn, 'http_connect_authority', None)
-		request_target = flow.request.raw_request_line.split()[1]
-		request_target_match = re.search('^([^/]+)://([^/]+)', request_target.decode())
-		if request_target_match:
-			request_target_origin = request_target_match.group(0)
+		if hasattr(flow.request, 'raw_request_line'):
+			request_target = flow.request.raw_request_line.split()[1]
+			request_target_match = re.search('^([^/]+)://([^/]+)', request_target.decode())
+			if request_target_match:
+				request_target_origin = request_target_match.group(0)
+			else:
+				request_target_origin = None
 		else:
-			request_target_origin = None
+			# http/2 and above don't have raw_request_line
+			request_target_origin = flow.request.scheme + '://' + flow.request.authority
+		
+		# attach diagnostic info
+		flow.request.headers["X-Proxy-Client-Connection-Details"] = ' '.join(kvpairs({
+			"tls": {
+				"outer": asdict(getattr(flow.client_conn, "outer_tls", TlsSummary())),
+				"inner": asdict(getattr(flow.client_conn, "inner_tls", TlsSummary())),
+			},
+			"http_connect": {
+				"http_version": getattr(flow.client_conn, 'http_connect_http_version', None),
+				"target": getattr(flow.client_conn, 'http_connect_authority', None),
+				"host_header": getattr(flow.client_conn, 'http_connect_host_header', None),
+			},
+			"request": {
+				"http_version": flow.request.http_version,
+				"target_origin": request_target_origin,
+				"host_header": flow.request.host_header,
+			},
+		}))
 		
 		# rewrite the request to go to the configured target
 		target_host = flow.request.host
@@ -83,22 +105,6 @@ def requestheaders(flow: http.HTTPFlow) -> None:
 			xff_prepend = ''
 		flow.request.headers["X-Forwarded-For"] = xff_prepend + flow.client_conn.address[0]
 		flow.request.headers["X-Forwarded-Scheme"] = target_scheme
-		
-		# attach diagnostic info
-		flow.request.headers["X-Proxy-Client-Connection-Details"] = ' '.join(kvpairs({
-			"tls": {
-				"outer": asdict(getattr(flow.client_conn, "outer_tls", TlsSummary())),
-				"inner": asdict(getattr(flow.client_conn, "inner_tls", TlsSummary())),
-			},
-			"http_connect": {
-				"target": http_connect_authority,
-				"host_header": getattr(flow.client_conn, 'http_connect_host_header', None),
-			},
-			"request": {
-				"target_origin": request_target_origin,
-				"host_header": flow.request.host_header,
-			},
-		}))
 	except:
 		flow.kill()
 		raise
