@@ -10,10 +10,9 @@ RUN apt-get ${APT_OPTS} update && \
 		procps iputils-ping netcat-openbsd curl \
 		libnginx-mod-http-perl \
 		python3 python3-pip python3-venv pipx \
-		gcc libpython3-dev libffi-dev \
 		perl libfile-slurp-perl libhtml-template-perl libtimedate-perl libipc-run-perl libxml-simple-perl \
 		cron \
-	&& rm -rf /var/lib/apt/lists/*
+	&& apt-get clean
 
 WORKDIR /usr/bin
 COPY hband-tools/dmaster/dmaster hband-tools/user-tools/metalink-sync-list hband-tools/user-tools/cdexec ./
