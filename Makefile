@@ -6,7 +6,7 @@ DOCKER_BUILD_https_proxy = $(https_proxy)
 BUILDAH_PUSH_https_proxy = $(https_proxy)
 
 GIT_URL_MITMPROXY = git://git.bitinfo.hu/sysop/mitmproxy
-GIT_REF_MITMPROXY = fbf5de5a8d13f58a1050f9291aa775aeb44594f4
+GIT_REF_MITMPROXY = 1fd58ffce146b60c4c380aa94f959fa7e88fc609
 
 
 .PHONY: default
