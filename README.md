@@ -102,7 +102,7 @@ Client may set these request headers to change caching behavior:
 ## Usage
 
 - install the mitmproxy CA cert:
-  1. `curl -f -x http://localhost:5003 http://mitm.it/cert/pem > /etc/ssl/certs/pancache-mitmproxy.pem`
+  1. `curl -f -x http://localhost:5003 http://mitm.it/cert/pem > /usr/local/share/ca-certificates/pancache-mitmproxy.crt`
   1. `update-ca-certificates`
   1. `c_rehash`
 - set environment to use proxy in programms supporting it:
