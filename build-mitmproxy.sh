@@ -17,5 +17,10 @@ git checkout ${GIT_REF_MITMPROXY}
 uv sync -v --frozen
 
 
+pip cache purge || true
+uv cache prune || true
+rm -rf /root/.cache/
+rm -rf /usr/{local/,}share/{doc,locale}
 apt-get $APT_OPTS autoremove --purge -y git gcc libpython3-dev libffi-dev
 apt-get clean
+rm -rf /var/lib/apt/lists
